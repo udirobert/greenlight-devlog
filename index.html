@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Greenlight — the dev log (2026 Epic AI MegaJam, DIRECTOR'S CUT)</title>
+<meta name="description" content="Four days, one human, three agents, one repo. The failures-first dev log of Greenlight — a game about a cut that won't stay cut.">
+<style>
+  :root{
+    --paper:#F2EAD8; --ink:#191713; --teal:#1E7A8C;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:"Avenir Next","Segoe UI",system-ui,sans-serif;
+    font-size:17px; line-height:1.55;
+  }
+  .sheet{max-width:760px; margin:0 auto; padding:0 28px 96px}
+  header{
+    padding:56px 0 8px;
+  }
+  .kicker{
+    font-size:12px; letter-spacing:.22em; text-transform:uppercase;
+    border-bottom:2px solid var(--ink); padding-bottom:6px; margin-bottom:22px;
+  }
+  h1{
+    font-size:56px; line-height:.95; margin:0 0 10px;
+    letter-spacing:-.01em; font-weight:800;
+  }
+  h1 em{font-style:normal; color:var(--teal)}
+  .sub{font-size:18px; margin:0 0 28px; max-width:60ch}
+  .card{
+    border:2px solid var(--ink); padding:18px 22px; margin:22px 0;
+    position:relative;
+  }
+  .card::before,.card::after{
+    content:"+"; position:absolute; font-size:14px; color:var(--ink);
+  }
+  .card::before{top:2px; left:6px}
+  .card::after{bottom:-2px; right:6px}
+  h2{
+    font-size:14px; letter-spacing:.2em; text-transform:uppercase;
+    margin:44px 0 14px; border-top:3px solid var(--ink); padding-top:14px;
+  }
+  h2 .n{color:var(--teal); margin-right:10px}
+  .entry{margin:26px 0}
+  .entry h3{font-size:19px; margin:0 0 8px; line-height:1.3}
+  .entry h3 .tag{
+    display:inline-block; background:var(--ink); color:var(--paper);
+    font-size:11px; letter-spacing:.14em; padding:2px 8px; vertical-align:2px;
+    margin-right:8px;
+  }
+  .entry h3 .tag.teal{background:var(--teal); color:var(--paper)}
+  .entry p{margin:8px 0}
+  .truth{
+    background:rgba(30,122,140,.09);
+    border-left:4px solid var(--teal);
+    padding:10px 14px; margin:12px 0;
+  }
+  .truth b{color:var(--teal)}
+  figure{margin:26px 0; border:2px solid var(--ink)}
+  figure img{display:block; width:100%; height:auto}
+  figcaption{
+    font-size:12.5px; letter-spacing:.06em; padding:8px 12px;
+    border-top:2px solid var(--ink); text-transform:uppercase;
+  }
+  .grid{display:grid; grid-template-columns:1fr 1fr; gap:18px}
+  @media (max-width:640px){.grid{grid-template-columns:1fr} h1{font-size:42px}}
+  code{
+    font-family:"SF Mono",ui-monospace,Menlo,monospace;
+    font-size:.86em; background:rgba(25,23,19,.07);
+    padding:1px 5px; border:1px solid rgba(25,23,19,.25);
+  }
+  ul.rules{padding-left:0; list-style:none; margin:14px 0}
+  ul.rules li{
+    padding:8px 0 8px 26px; position:relative; border-bottom:1px dashed rgba(25,23,19,.35);
+  }
+  ul.rules li::before{content:"■"; position:absolute; left:2px; color:var(--teal)}
+  .mirror{
+    text-align:center; padding:34px 10px; border:3px solid var(--ink);
+    margin:40px 0; position:relative;
+  }
+  .mirror::before,.mirror::after{content:"×"; position:absolute; font-size:15px}
+  .mirror::before{top:4px; left:8px}
+  .mirror::after{bottom:2px; right:8px}
+  .mirror .line{font-size:20px; font-weight:700; line-height:1.4}
+  .mirror .line em{font-style:normal; color:var(--teal)}
+  .mirror .why{font-size:13px; letter-spacing:.1em; text-transform:uppercase; margin-top:10px; opacity:.75}
+  footer{
+    margin-top:56px; padding-top:18px; border-top:3px solid var(--ink);
+    font-size:13.5px; letter-spacing:.04em;
+  }
+  footer a{color:var(--ink)}
+  .toc{font-size:14px; display:flex; flex-wrap:wrap; gap:6px 16px; margin:18px 0 0}
+  .toc a{color:var(--ink); text-decoration:none; border-bottom:1px solid var(--ink)}
+  .toc a:hover{color:var(--teal); border-color:var(--teal)}
+</style>
+</head>
+<body>
+<div class="sheet">
+<header>
+  <div class="kicker">2026 Epic AI MegaJam · theme: director's cut · solo entry</div>
+  <h1>GREENLIGHT<br>the <em>dev log</em></h1>
+  <p class="sub">Four days, one human, three agents, one repo, one rule that only
+  changes with a test. The game is a studio where machines pitch and one human
+  decides. The jam ran the same way — this is the trail of what we cut,
+  what broke, and what it taught.</p>
+  <nav class="toc">
+    <a href="#game">the game</a>
+    <a href="#arch">architecture</a>
+    <a href="#reversals">reversals</a>
+    <a href="#failures">failures</a>
+    <a href="#process">process rules</a>
+    <a href="#cut">what we cut</a>
+    <a href="#evidence">evidence</a>
+    <a href="#mirror">the mirror</a>
+  </nav>
+</header>
+
+<h2 id="game"><span class="n">01</span>The game, in one paragraph</h2>
+<div class="card">
+<p>You run the greenlight desk at a studio where the pitches never stop. Four
+films cross the belt; the stage holds two. A greenlight is a <b>premiere</b> —
+the set rises, the room reacts, and the light on the set <i>is</i> the
+10-second clock. A cut makes a <b>ghost</b>: the crew keeps working inside the
+surviving films and the trailer. When the belt empties, the edit bay gives you
+15 seconds to pull a film off the reel — or the studio pulls the newest
+standing one for you. One of the four execs was cut from the org chart. She
+still votes, and she speaks last.</p>
+</div>
+
+<h2 id="arch"><span class="n">02</span>The architecture decision</h2>
+<div class="card">
+<p><b>The desk is the game. Unreal is a client.</b> Every rule — the belt, the
+budget, the premiere and bay clocks, ghosts, assembly — lives in pure
+TypeScript modules with zero engine imports. A node desk service owns state;
+the UE C++ client is an HTTP + JSON reader that renders the slate it is
+handed. No rule crosses the wire; the desk's private <code>whisper</code>
+field cannot leave the server (tested).</p>
+<p>Why: a solo entry on a jam clock cannot afford the C++ compile/cook loop to
+be the bottleneck for <i>game logic</i>. Rules changed dozens of times — each
+with a test, verified in seconds on the desk, never waiting on an engine
+build. The client is thin on purpose: it mirrors assembly numbers, it
+performs the room, it does not decide. The same rules also shipped bundled
+<i>inside</i> the packaged game (the Shipping binary spawns its own desk) and
+could be re-bundled into the standalone web build that became the jam
+presence — same <code>decide</code>, <code>drop</code>,
+<code>assemble</code>, <code>tick</code>. No re-implementation anywhere.</p>
+</div>
+
+<h2 id="reversals"><span class="n">03</span>Reversals — the big ones</h2>
+
+<div class="entry">
+  <h3><span class="tag teal">R1</span>Team scope, corrected within a day</h3>
+  <p>Planned as a team build: "trade craft for Sunday." Corrected the next
+  morning: there is one human entrant; the builders are agents, filed as
+  disclosed tooling. Solo Driver stayed claimable, Best Team did not. The
+  agents are a crew, not team members — and the scoring docs were rewritten
+  around that.</p>
+</div>
+
+<div class="entry">
+  <h3><span class="tag teal">R2</span>The belt of eight was a management sim</h3>
+  <p>First design: budget 100, belt of 192, keep what you can. Played it and
+  it read as a spreadsheet. Replaced with four tentpoles, stage holds two, a
+  yes is a <i>premiere</i> and a no is a <i>ghost that keeps working</i>. The
+  mechanic became the aesthetic: pulled print plates, teal = work that is
+  still working. The 8-belt rules were cut, not hidden.</p>
+</div>
+
+<div class="entry">
+  <h3><span class="tag teal">R3</span>Verbs were a menu; verbs are physical</h3>
+  <p>Two green verbs plus dropdowns would have read as a system. Now:
+  greenlight is a hold on the glass (0.8s or it doesn't send), cut is closing
+  the stage door, pull is dragging the plate off the reel. Each film performs
+  for ten seconds <i>before</i> the answer exists. Stakes before the knife.</p>
+</div>
+
+<div class="entry">
+  <h3><span class="tag teal">R4</span>Cinematic realism was the default; we killed it with our own art</h3>
+  <p>Every jam game submits dark rain-soaked noir. The concept stills made the
+  trap visible, so the look became risograph print: paper <code>#F2EAD8</code>,
+  ink <code>#191713</code>, one teal <code>#1E7A8C</code> reserved for work.
+  Three inks; misregistration grows with the ghost count (the print keeps
+  score); halftone that must not crawl in the trailer. The look was written
+  as a buildable material contract <i>before</i> a single node was wired.</p>
+</div>
+
+<div class="entry">
+  <h3><span class="tag teal">R5</span>"The world falls off into nowhere"</h3>
+  <p>First streamed-seat playthrough (G3): three film sets as marker cubes
+  22m apart, no floor, no booth, no introduction, default-gray engine cubes
+  around mono-riso sets. "Exceptionally bland rather than a rich tapestry."
+  The human said so from the seat — and the last day was spent on exactly
+  that: the soundstage shell, the cold open, the premiere rise, the exposure
+  bracket. The prior cut order was superseded in one sentence: <i>world
+  cohesion outranks everything except the cook.</i></p>
+</div>
+
+<div class="entry">
+  <h3><span class="tag teal">R6</span>"Web is on the platform list"</h3>
+  <p>The one that cost the entry its eligibility. We read the platform list,
+  saw "web," and spent real hours on a standalone browser build. The official
+  rules say otherwise: UE submissions must be packaged for Windows 10/11,
+  macOS, Android, or iOS — and "web (experimental)" is specifically the
+  UE 5.9 MegaJam Preview Wasm export of a <i>Unreal-built</i> game. Linux is
+  not eligible; a standalone web game is not eligible. The web build still
+  ships as the jam presence, filed honestly as platform <i>Other</i>.
+  Lesson: read the rules PDF before building to the platform list.</p>
+</div>
+
+<h2 id="failures"><span class="n">04</span>Failures — what broke, in order</h2>
+
+<div class="entry">
+  <h3><span class="tag">F1</span>Black frames, three separate causes</h3>
+  <p>Headless captures came back black. (a) Editor-mode
+  <code>-RenderOffscreen</code> captures have no viewport and World Partition
+  never streams. (b) DPMS was blanking the X display. (c) A window created
+  while locked stayed unmapped. Working recipe: <code>-game
+  -RenderOffscreen</code> + camera via <code>BugItGo</code> +
+  <code>HighResShot</code>, DPMS off. One script per cause, ~30s a frame.</p>
+</div>
+
+<div class="entry">
+  <h3><span class="tag">F2</span>Stale UHT intermediates kill packaging</h3>
+  <p>A Shipping package failed with <code>generated.h not found</code>. The
+  header cache carried a different FID than the sources. Fix: delete the
+  project's UHT directory, rebuild; compiled objects persist so the retry
+  resumes incrementally. Rule since: after any header churn, clear the UHT
+  dir before packaging.</p>
+</div>
+
+<div class="entry">
+  <h3><span class="tag">F3</span>The staged desk went stale</h3>
+  <p>The packaged game spawns its desk from <code>ue/services/</code>, not the
+  repo's <code>services/</code>. That snapshot predated the premiere-clock
+  work, so the 10-second clock <b>silently never ran in-game</b> — no error
+  anywhere, the client just polled a service with no clock. Refresh the
+  staged copy before every cook. The failure that most looks like a design
+  problem when it is a packaging one.</p>
+</div>
+
+<div class="entry">
+  <h3><span class="tag">F4</span>The teal chase (five rounds)</h3>
+  <p>The game's signature — teal crews still working in cut films — rendered
+  <b>zero teal pixels</b> in every capture. Five diagnosis rounds, each
+  narrowing: material constant? (read-back verified correct). Saturation
+  mask math? (still zero). Custom-depth stencil fallback? (actor properties
+  verified set — by probing to a <i>file</i>, because <code>unreal.log</code>
+  doesn't reach the log file under the python commandlet). Stencil buffer
+  population? (still zero in headless). The root cause, found when nothing
+  was left to blame:</p>
+  <div class="truth"><b>Every capture was taken seconds after boot, before
+  async shader compilation finished.</b> Cold shaders — which is why a gain
+  sweep "did nothing" (byte-identical frames). Worse, every capture run left
+  its editor process alive forever (<code>-game</code> never exits), so eight
+  zombie editors fought for the GPU and older ones overwrote the "latest"
+  frame. Fix: warm a throwaway capture ~150s, kill the editor pid,
+  <i>then</i> capture. Zero teal pixels → 37,000. The five rounds weren't
+  wasted: they proved every actor-side property correct and isolated the
+  failure to the render pipeline, where the truth lived.</div>
+</div>
+
+<div class="entry">
+  <h3><span class="tag">F5</span>HighResShot does not composite UMG</h3>
+  <p>In <code>-game -RenderOffscreen</code>, "end card" shots never actually
+  contained the end card, and no HUD is verifiable that way. Both render for
+  real viewport players. Consequence: anything UMG is verified by code path +
+  the streamed seat, never by the headless frame. A capture pipeline lying
+  about its own output is worse than no capture pipeline.</p>
+</div>
+
+<div class="entry">
+  <h3><span class="tag">F6</span>Python headless is flakier than it looks</h3>
+  <p><code>-ExecutePythonScript</code> and <code>-ExecCmds="py
+  &lt;file&gt;"</code> produce no output on this build. The reliable path is
+  the <code>pythonscript</code> commandlet — which has its own silent trap:
+  it does not set <code>__name__ == "__main__"</code>, so a script guarded
+  that way skips <code>main()</code> <i>entirely</i>. Several
+  "the script ran, nothing happened" runs explained. Also:
+  Display-severity log lines don't reach <code>-stdout</code>; the truth is
+  in the project log file.</p>
+</div>
+
+<div class="entry">
+  <h3><span class="tag">F7</span>World Partition eats your placements</h3>
+  <p>Placed actors live in <code>__ExternalActors__/**</code>, not the
+  <code>.umap</code>. The first push of a placement missed that tree and the
+  actor <b>silently vanished for every other checkout</b>. Commit the whole
+  tree or the placement is a ghost — fittingly, this game is full of them.</p>
+</div>
+
+<div class="entry">
+  <h3><span class="tag">F8</span>Static mobility, silent slam</h3>
+  <p>A runtime-rotated prop "silently failed behind a PIE mobility warning":
+  a Static StaticMeshActor placed at runtime cannot rotate. The clapper's
+  punch was dead for a full cycle until the placement script set
+  <code>MOVABLE</code>. Rule: if a runtime move looks dead in a capture, grep
+  the log for "Mobility of" first.</p>
+</div>
+
+<div class="entry">
+  <h3><span class="tag">F9</span>pkill -f matched the ssh session</h3>
+  <p>The kill pattern appeared later in the same remote command line, so the
+  cleanup killed its own session mid-command. A <code>pgrep</code> watcher
+  with the same problem made a dead build read as "STILL BUILDING." Rule:
+  character-class the pattern and keep the literal target string out of the
+  rest of the command line.</p>
+</div>
+
+<div class="entry">
+  <h3><span class="tag">F10</span>The MCP "fatal dialog" was never the plugin</h3>
+  <p>Enabling Epic's MCP plugin killed every headless editor pass with a
+  fatal "module not found." We removed it from the committed uproject (safe).
+  The real root cause: the engine had been rebuilt, so every prebuilt plugin
+  manifest carried an out-of-date BuildId — a skipped dependency reads as
+  "module not found." Rebuilding the editor target with the project in the
+  graph compiled the modules fresh, and then the full MCP path worked:
+  initialize → tools → create a skill in the running editor over JSON-RPC →
+  read it back verbatim. The render bot is a member of the crew. Gotcha: the
+  <code>+</code>-joined single-arg <code>-EnablePlugins</code> form is fatal
+  in <code>PluginManager.cpp</code>.</p>
+</div>
+
+<div class="entry">
+  <h3><span class="tag">F11</span>Material graph connects silently lie</h3>
+  <p>The UE-python <code>MaterialEditingLibrary.connect_*</code> returns a
+  bool and never raises: bad pin names "succeeded." Single-input nodes report
+  pin <code>"None"</code>; <code>Saturate</code>/<code>Clamp</code> refuse
+  python connects (worked around with <code>Min</code>+<code>Max</code>).
+  Type-strict lerps on <code>float4</code> scene textures meant hand-padded
+  vectors. And the build's connect signature is
+  <code>(from_expression, from_output_name, property_)</code> — the
+  "obvious" arg order produced <b>unconnected (black) materials with zero
+  errors</b>. Every connect now reads its return value and falls back to a
+  name dump.</p>
+</div>
+
+<div class="entry">
+  <h3><span class="tag">F12</span>The freeze-semantics lie was in the copy</h3>
+  <p>The lapse drill showed <code>freezeBay</code> only pulls films while the
+  picture is <i>over budget</i>. A clean slate freezes as a window closing —
+  no pull, no dead lights. The room's banner claimed theft either way.
+  Fixed: <b>THE CLOCK IS DEAD</b> when nothing was pulled,
+  <b>THE STUDIO PULLED — &lt;title&gt;</b> when it was.</p>
+</div>
+
+<div class="entry">
+  <h3><span class="tag">F13</span>MSVC exit 87 was our command line, not the box</h3>
+  <p>Every install of Visual Studio Build Tools on the Windows cook box died
+  with <code>ERROR_INVALID_PARAMETER</code>. After a day of suspecting the
+  session, the desktop, and the installer: the VS detailed log said
+  <i>"Option 'noreport' is unknown. Option 'nothankyou' is unknown. Option
+  'wait' is unknown. Failed to parse the command line arguments."</i> We were
+  passing bootstrapper-only flags to the WPF installer, and
+  <code>--add</code> without <code>--productId</code>. The box was fine all
+  along. Corrected args parse clean and cache 571 MB of components — the
+  Windows lane's last tooling blocker is gone.</p>
+</div>
+
+<h2 id="process"><span class="n">05</span>The process rules that fell out of it</h2>
+<div class="card">
+<ul class="rules">
+  <li>Rules change only with a test and a dated line in the notes. 48 desk tests green at submission.</li>
+  <li>No visual change closes without a retained frame.</li>
+  <li>The Mac is a thin client: no Unreal, no cook, no engine downloads.</li>
+  <li>One package at a time — three concurrent instances starve over desk port 8788.</li>
+  <li>Stamped-truth pattern: the client renders what the desk decided (<code>last.action</code>, <code>lastLines</code>) rather than re-deriving it — so a slow player hears the studio's cut via a <code>410</code> instead of silently voting for the next film.</li>
+</ul>
+</div>
+
+<h2 id="cut"><span class="n">06</span>What we cut from the project itself</h2>
+<div class="card">
+<p>The brief asks for the feature that didn't make it. Ours, honestly:</p>
+<ul class="rules">
+  <li><b>Take 47</b> — webcam mocap as the controller. Funniest video, worst pipeline on a clock. Cut at the wall, day 1.</li>
+  <li><b>Decomp</b> — pulling props apart with a generative mesh tool. Real mechanic, nobody else has it; also a pile of meshes this machine cannot hold.</li>
+  <li><b>Three vignette maps</b> — collapsed into data layers on one backlot.</li>
+  <li><b>Faces</b> — "each film has one readable person" became silhouette-first staging; optional, and stayed optional.</li>
+  <li><b>The 8-belt management sim</b> — replaced by the four-tentpole stage.</li>
+  <li><b>The 5.9 WASM build, Lumen World Cache, Canvas Bridge, MCP toolsets</b> — verified absent from the 5.8 source or multi-day away; all post-jam, as written, not with three hours on the clock.</li>
+  <li><b>The eligible platform, on the clock</b> — the honest entry: the game is real, verified, and packaged (Linux Shipping, full autopilot loop); the jam's eligible platforms could not finish in the remaining window. The submission is the playable web build, filed as platform <i>Other</i>, expected to be DQ'd, with the 5.9-web lane queued for continuation.</li>
+</ul>
+<p>The long-term product is what the game <i>accumulates</i>, not what it
+widens: a persistent org chart where every run leaves names, ghosts that
+persist across runs so the studio is never empty, and
+<code>runs/*.json</code> as the surface — replayable, devloggable, analytic.
+No fifth film, no new verbs.</p>
+</div>
+
+<h2 id="evidence"><span class="n">07</span>Evidence</h2>
+<div class="grid">
+  <figure><img src="img/trailer-collision.jpg" alt="the trailer collision frame, two films on one floor"><figcaption>Trailer collision — the thesis frame (riso, 3 inks)</figcaption></figure>
+  <figure><img src="img/ghost-read.jpg" alt="a standing set with the cut crew still working"><figcaption>Ghost read — the cut crew still at its marks</figcaption></figure>
+  <figure><img src="img/pt-01.jpg" alt="first pitch from the Shipping package autopilot"><figcaption>pt-01 · first pitch (Shipping autopilot)</figcaption></figure>
+  <figure><img src="img/pt-05.jpg" alt="trailer sweep frame from the packaged build"><figcaption>pt-05 · trailer sweep (packaged binary)</figcaption></figure>
+</div>
+<p>Thumbnail census on the final frames (360px): paper 11–48%, black 42–85%,
+teal 0.03–0.14%. Ink-heavy by design; the riso reads at thumbnail scale,
+which is where the video gets judged. 48/48 desk tests; the desk's public
+payload is the test oracle.</p>
+
+<h2 id="mirror"><span class="n">08</span>The mirror</h2>
+<div class="mirror">
+  <div class="line">MACHINES PITCHED.<br>A <em>HUMAN</em> DECIDED.<br>THE STUDIO AND THE JAM RAN THE SAME WAY.</div>
+  <div class="why">it is on the end card, in the only color the card allows for anything still working</div>
+</div>
+<p>This line cannot be copied by any other entry, because ours is true:
+three agents built the game, one human greenlit every rule change from a
+streamed seat, and the game — where machines pitch and one human decides —
+is the submission log itself.</p>
+
+<footer>
+  Greenlight · 2026 Epic AI MegaJam · solo entry by udirobert<br>
+  playable web presence: <a href="https://papajams.itch.io/greenlight">papajams.itch.io/greenlight</a> ·
+  jam entry: <a href="https://itch.io/jam/2026-epic-ai-megajam/rate/5376806">submission #5376806</a>
+</footer>
+</div>
+</body>
+</html>
